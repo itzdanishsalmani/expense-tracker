@@ -1,11 +1,11 @@
 import Cards from "@/components/cards";
-import requestSMSPermission from "@/utils/notification";
-import { parseAndCategorizeExpenses, ParsedExpense } from "@/utils/smsParser";
+import { requestNotificationPermissions } from "@/utils/notification";
+import { ParsedExpense } from "@/utils/smsParser";
 import { useCallback, useEffect, useState } from "react";
-import { Modal, NativeModules, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, NativeModules, Pressable, ScrollView, Text, View, DeviceEventEmitter } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initDB, insertTransactions, getAllTransactions, updateTransactionCategory } from "@/utils/db";
-
+import Fontisto from '@expo/vector-icons/Fontisto';
 const CATEGORIES: ParsedExpense["category"][] = ["food", "travelling", "shopping", "others"];
 
 export default function Home() {
@@ -27,77 +27,26 @@ export default function Home() {
         return allExpenses;
     }, []);
 
-    const fetchAndSyncSms = useCallback(async (forceFullScan = false) => {
+    const loadExpenses = useCallback(async () => {
         try {
             setIsScanning(true);
             // Initialize SQLite DB
             await initDB();
 
-            const hasPermission = await requestSMSPermission();
-            if (!hasPermission) return;
+            await requestNotificationPermissions();
 
-            // 1. Manage First Launch & Sync Dates
-            let firstLaunchStr = await AsyncStorage.getItem('APP_FIRST_LAUNCH_DATE');
-            let firstLaunchDate = firstLaunchStr ? parseInt(firstLaunchStr) : 0;
-
-            if (!firstLaunchDate) {
-                firstLaunchDate = Date.now();
-                await AsyncStorage.setItem('APP_FIRST_LAUNCH_DATE', firstLaunchDate.toString());
-            }
-
-            let lastSyncStr = await AsyncStorage.getItem('LAST_SYNC_DATE');
-            // The user only wants to read messages up to 7 days BEFORE the FIRST START DATE.
-            let lastSyncDate = lastSyncStr ? parseInt(lastSyncStr) : (firstLaunchDate - (7 * 24 * 60 * 60 * 1000));
-            if (forceFullScan) lastSyncDate = 0;
-
-            // 2. Fetch SMS since the sync date. Manual scan uses timestamp 0 to refresh old rows too.
-            const { SmsReader } = NativeModules;
-            if (SmsReader && SmsReader.getSMS) {
-                const rawSms = await SmsReader.getSMS(lastSyncDate);
-
-                if (rawSms && rawSms.length > 0) {
-                    const parsed = parseAndCategorizeExpenses(rawSms);
-                    console.log(`Successfully extracted ${parsed.length} expense transactions to sync!`);
-                    console.log("Sample parsed transaction:", parsed);
-
-                    // Insert into SQLite
-                    if (parsed.length > 0) {
-                        await insertTransactions(parsed);
-                    }
-                }
-
-                // Update the last sync date
-                await AsyncStorage.setItem('LAST_SYNC_DATE', Date.now().toString());
-            }
-
-            // 3. Render from SQLite database
-            let allExpenses = await refreshExpenseList();
-
-            // If nothing was found from the 7-day window and the device has no past data,
-            // do a deep scan (timestamp 0) to ensure the local device messages are processed.
-            if (!forceFullScan && allExpenses.length === 0) {
-                console.log("No expenses found in the last 7 days. Scanning all messages of local device...");
-                if (SmsReader && SmsReader.getSMS) {
-                    const deepRawSms = await SmsReader.getSMS(0);
-                    if (deepRawSms && deepRawSms.length > 0) {
-                        const deepParsed = parseAndCategorizeExpenses(deepRawSms);
-                        if (deepParsed.length > 0) {
-                            await insertTransactions(deepParsed);
-                            await refreshExpenseList();
-                        }
-                    }
-                }
-            }
+            // Render from SQLite database
+            await refreshExpenseList();
         } catch (err) {
-            console.error("Error syncing and fetching expenses:", err);
+            console.error("Error fetching expenses:", err);
         } finally {
             setIsScanning(false);
         }
     }, [refreshExpenseList]);
 
     useEffect(() => {
-        fetchAndSyncSms();
-    }, [fetchAndSyncSms]);
+        loadExpenses();
+    }, [loadExpenses]);
 
     const handleCategoryChange = async (category: ParsedExpense["category"]) => {
         if (!selectedExpense) return;
@@ -112,26 +61,62 @@ export default function Home() {
         setSelectedExpense(null);
     };
 
+    const triggerFakeNotification = () => {
+        // Subtract a random amount of hours (1 to 48) to avoid the 15-minute deduplication logic in App.tsx
+        const randomHoursAgo = Math.floor(Math.random() * 48) + 1;
+        const fakeTime = Date.now() - (randomHoursAgo * 60 * 60 * 1000);
+
+        DeviceEventEmitter.emit("PaymentNotification", {
+            title: "Test Bank",
+            text: "Rs. 10 spent at FakeStore",
+            packageName: "com.test.bank",
+            postTime: fakeTime,
+        });
+        setTimeout(() => loadExpenses(), 800);
+    };
+
     return (
         <>
             <ScrollView style={{ flex: 1, padding: 20 }}>
                 <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Hello, User</Text>
-                <Text style={{ fontSize: 18, marginBottom: 20 }}>
-                    Today you spent Rs. {totalSpent.toFixed(2)}.
-                </Text>
+                <Text>Track. Understand. Save better</Text>
 
-                <Text style={{ fontSize: 20, fontWeight: "600", marginBottom: 10 }}>Recent Expenses</Text>
+                <View style={{ backgroundColor: '#6366F1', padding: 16, borderRadius: 12, }}>
+
+                    <View
+                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}
+                    >
+
+                        <View>
+
+                            <Text style={{ color: '#fff' }}>
+                                Today's Spend
+                            </Text>
+                            <Text
+                                style={{ marginTop: 12, color: '#fff', fontSize: 28 }}
+                            >
+                                Rs. {totalSpent.toFixed(2)}
+                            </Text>
+                        </View>
+
+
+                        <Fontisto name="wallet" size={42} color="#fff" />
+                    </View>
+                </View>
+                <Text style={{ fontSize: 20, fontWeight: "600", marginVertical: 10 }}>Recent Expenses</Text>
 
                 {isScanning ? (
-                    <Text style={{ marginTop: 20, color: "#007AFF" }}>Scanning messages of local device...</Text>
+                    <Text style={{ marginTop: 20, color: "#007AFF" }}>Loading expenses...</Text>
                 ) : expenses.length === 0 ? (
                     <Text style={{ marginTop: 20, color: "gray" }}>No recent expenses found in your database.</Text>
                 ) : (
                     expenses.map((item) => (
                         <Cards
                             key={item.id}
-                            title={`${item.category.toUpperCase()}${item.merchant !== 'Unknown' ? ` • ${item.merchant}` : ''}`}
-                            description={`Rs. ${item.amount} • ${new Date(item.date).toLocaleDateString([], { day: '2-digit', month: 'short' })} ${new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                            merchant={`${item.merchant !== 'Unknown' ? ` ${item.merchant}` : ''}`}
+                            category={`${item.category}`}
+                            amount={`Rs. ${item.amount}`}
+                            date={`${new Date(item.date).toLocaleDateString([], { day: '2-digit', month: 'short' })} ${new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                             onPress={() => setSelectedExpense(item)}
                         />
                     ))
@@ -139,30 +124,59 @@ export default function Home() {
                 <View style={{ height: 100 }} />
             </ScrollView>
 
-            <Pressable
-                disabled={isScanning}
-                onPress={() => fetchAndSyncSms(true)}
-                style={{
-                    position: "absolute",
-                    right: 20,
-                    bottom: 24,
-                    minWidth: 72,
-                    height: 52,
-                    borderRadius: 26,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: isScanning ? "#8abfff" : "#007AFF",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 8,
-                    elevation: 6,
-                }}
-            >
-                <Text style={{ color: "white", fontSize: 15, fontWeight: "700" }}>
-                    {isScanning ? "Scanning" : "Scan"}
-                </Text>
-            </Pressable>
+            <View style={{
+                position: "absolute",
+                right: 20,
+                bottom: 24,
+                flexDirection: "row",
+                gap: 12
+            }}>
+                <Pressable
+                    disabled={isScanning}
+                    onPress={triggerFakeNotification}
+                    style={{
+                        minWidth: 72,
+                        height: 52,
+                        borderRadius: 26,
+                        paddingHorizontal: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "#FF9500",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 8,
+                        elevation: 6,
+                    }}
+                >
+                    <Text style={{ color: "white", fontSize: 15, fontWeight: "700" }}>
+                        Fake 10 Rs
+                    </Text>
+                </Pressable>
+
+                <Pressable
+                    disabled={isScanning}
+                    onPress={() => loadExpenses()}
+                    style={{
+                        minWidth: 72,
+                        height: 52,
+                        borderRadius: 26,
+                        paddingHorizontal: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: isScanning ? "#8abfff" : "#007AFF",
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 8,
+                        elevation: 6,
+                    }}
+                >
+                    <Text style={{ color: "white", fontSize: 15, fontWeight: "700" }}>
+                        {isScanning ? "Refreshing" : "Refresh"}
+                    </Text>
+                </Pressable>
+            </View>
 
             <Modal
                 animationType="slide"

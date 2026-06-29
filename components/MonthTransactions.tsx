@@ -86,6 +86,20 @@ export default function MonthTransactions() {
     filteredTransactions.reduce((sum, item) => sum + item.amount, 0)
   ), [filteredTransactions]);
 
+
+  // Helper to filter out transactions with duplicate amount and date
+  const filterDuplicates = (txs: ParsedExpense[]) => {
+    const seen = new Set<string>();
+    return txs.filter((item) => {
+      const key = `${item.amount}_${formatDateKey(item.date)}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  };
+
   const refreshMonthTransactions = useCallback(async () => {
     await initDB();
     const [year, month] = monthKey.split("-").map(Number);
@@ -93,9 +107,9 @@ export default function MonthTransactions() {
     const start = startOfMonth(new Date(year, month - 1)).getTime();
     const end = endOfMonth(new Date(year, month - 1)).getTime();
     const rows = await getTransactionsByDateRange(start, end);
-
-    setTransactions(rows);
-    setTotal(rows.reduce((sum, item) => sum + item.amount, 0));
+    const filteredRows = filterDuplicates(rows);
+    setTransactions(filteredRows);
+    setTotal(filteredRows.reduce((sum, item) => sum + item.amount, 0));
   }, [monthKey]);
 
   useFocusEffect(

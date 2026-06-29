@@ -1,27 +1,33 @@
-import { PermissionsAndroid } from 'react-native';
+import { Alert, Linking, NativeModules } from "react-native";
 
-export default async function requestSMSPermission(): Promise<boolean> {
-  try {
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.READ_SMS,
-      {
-        title: 'Allow SMS Access',
-        message:
-          'We need access to your SMS to automatically track your expenses from bank messages.',
-        buttonPositive: 'Allow',
-        buttonNegative: 'Deny',
-      }
-    );
-
-    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-      console.log('SMS permission granted');
-      return true;
-    } else {
-      console.log('SMS permission denied');
-      return false;
+export async function requestNotificationPermissions(): Promise<boolean> {
+  const { SmsReader } = NativeModules;
+  
+  if (SmsReader && SmsReader.hasNotificationPermission) {
+    const hasPermission = await SmsReader.hasNotificationPermission();
+    if (hasPermission) {
+      return true; // Already granted, no need to ask
     }
-  } catch (err) {
-    console.warn(err);
-    return false;
   }
+
+  Alert.alert(
+    "Notification Access",
+    "Enable notification access for expense tracking.",
+    [
+      {
+        text: "Open Settings",
+        onPress: async () => {
+          await Linking.sendIntent(
+            "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"
+          );
+        },
+      },
+      {
+        text: "Cancel",
+        style: "cancel"
+      }
+    ]
+  );
+
+  return false;
 }

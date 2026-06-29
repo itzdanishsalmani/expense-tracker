@@ -70,9 +70,10 @@ function extractMerchant(body: string): string {
     return "Unknown";
 }
 
-export function parseAndCategorizeExpenses(smsList: SmsMessage[]): ParsedExpense[] {
+export function parseAndCategorizeExpenses(smsList: SmsMessage[], existingTransactions: ParsedExpense[] = []): ParsedExpense[] {
     const expenses: ParsedExpense[] = [];
-    const seenMap = new Set<string>();
+    // Merge existing transactions for deduplication
+    const allTxs = [...existingTransactions];
 
     // Common expense indicators
     const expenseIndicators = ["debited", "spent", "paid", "sent", "deducted", "transaction", "withdrawn", "txn", "dr", "purchase", "debit"];
@@ -108,23 +109,26 @@ export function parseAndCategorizeExpenses(smsList: SmsMessage[]): ParsedExpense
                 }
             }
 
-            // Deduplication Check
-            // A unique key based on exact amount and the timestamp.
-            // Since SMS timestamps might vary slightly if received over network, 
-            // grouping around the same minute could be even safer but exact date + amount is strong.
-            const uniqueKey = `${amount}_${sms.date}`;
-
-            if (!seenMap.has(uniqueKey)) {
-                seenMap.add(uniqueKey);
-
-                expenses.push({
+            // Deduplication: check for existing tx within 15 minutes, same amount and merchant
+            const fifteenMin = 15 * 60 * 1000;
+            const merchant = extractMerchant(sms.body);
+            const isDuplicate = allTxs.some(tx =>
+                Math.abs(tx.date - sms.date) <= fifteenMin &&
+                tx.amount === amount &&
+                tx.merchant === merchant
+            );
+            if (!isDuplicate) {
+                const uniqueKey = `${amount}_${sms.date}`;
+                const parsed: ParsedExpense = {
                     id: uniqueKey,
                     amount,
                     category,
                     date: sms.date,
                     originalText: sms.body,
-                    merchant: extractMerchant(sms.body)
-                });
+                    merchant
+                };
+                expenses.push(parsed);
+                allTxs.push(parsed);
             }
         }
     });

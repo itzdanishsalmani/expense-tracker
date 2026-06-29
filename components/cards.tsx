@@ -1,24 +1,42 @@
 import { Pressable, Text, View } from "react-native";
 
 export default function Cards({
-  title,
-  description,
+  merchant,
+  category,
+  amount,
+  date,
   onPress,
 }: {
-  title: string;
-  description: string;
+ merchant: string,
+  category: string,
+  amount: string,
+  date: string
   onPress?: () => void;
 }) {
   return (
     <Pressable onPress={onPress}>
         <View style={{
-            backgroundColor: "lightblue",
+            backgroundColor: "#fff",
             padding: 20,
             margin: 10,
-            borderRadius: 10,
+            borderRadius: 12,
+            borderWidth:0.5,
+            borderColor:'#E5E7EB',
+            flexDirection:'row',
+            justifyContent:'space-between',
+            alignItems:'center'
         }}>
-            <Text style={{fontSize: 18, fontWeight: "bold"}}>{title}</Text>
-            <Text>{description}</Text>
+          <View>
+
+            <Text style={{fontSize: 18, fontWeight: "bold"}}>{merchant}</Text>
+            <View
+            style={{flexDirection:'row', gap:8, paddingTop:4}}
+            >
+            <Text>{date}</Text>
+            <Text>{category}</Text>
+            </View>
+          </View>
+            <Text>{amount}</Text>
 
         </View>
     </Pressable>
