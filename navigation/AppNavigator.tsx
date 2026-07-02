@@ -2,6 +2,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import MonthTransactions from "@/components/MonthTransactions";
+import AllTransactions from "@/components/allTransactions";
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,12 @@ export default function AppNavigator() {
           <Stack.Screen
             name="MonthTransactions"
             component={MonthTransactions}
+          />
+
+          <Stack.Screen
+            name="AllTransactions"
+            component={AllTransactions}
+            options={{ headerShown: true, title: "All Transactions" }}
           />
 
         </Stack.Navigator>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle, G, Text as SvgText } from 'react-native-svg';
+import { colors, typography } from "@/utils/theme";
 
 interface CategoryData {
     label: string;
@@ -32,7 +33,7 @@ export default function CategoryChart({ data, size = 180, strokeWidth = 30 }: Ca
                             cx={halfSize}
                             cy={halfSize}
                             r={radius}
-                            stroke="#E0E0E0"
+                            stroke={colors.border}
                             strokeWidth={strokeWidth}
                             fill="transparent"
                         />
@@ -67,8 +68,8 @@ export default function CategoryChart({ data, size = 180, strokeWidth = 30 }: Ca
                         y={halfSize - 10}
                         textAnchor="middle"
                         fontSize="14"
-                        fill="#666"
-                        fontWeight="500"
+                        fill={colors.textMuted}
+                        fontWeight={typography.weight.medium}
                     >
                         Total
                     </SvgText>
@@ -79,8 +80,8 @@ export default function CategoryChart({ data, size = 180, strokeWidth = 30 }: Ca
                         y={halfSize + 12}
                         textAnchor="middle"
                         fontSize="18"
-                        fill="#333"
-                        fontWeight="bold"
+                        fill={colors.text}
+                        fontWeight={typography.weight.bold}
                     >
                         {total > 1000 ? (total / 1000).toFixed(1) + 'k' : Math.round(total)}
                     </SvgText>
@@ -93,7 +94,7 @@ export default function CategoryChart({ data, size = 180, strokeWidth = 30 }: Ca
                     return (
                         <View key={index} style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 10, marginVertical: 4 }}>
                             <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.color, marginRight: 6 }} />
-                            <Text style={{ fontSize: 13, color: '#555' }}>
+                            <Text style={{ ...typography.caption, color: colors.textMuted }}>
                                 {item.label} (₹{Math.round(item.value)})
                             </Text>
                         </View>

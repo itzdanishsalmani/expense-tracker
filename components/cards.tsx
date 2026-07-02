@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from "react-native";
+import { colors, typography } from "@/utils/theme";
 
 export default function Cards({
   merchant,
@@ -16,27 +17,27 @@ export default function Cards({
   return (
     <Pressable onPress={onPress}>
         <View style={{
-            backgroundColor: "#fff",
-            padding: 20,
-            margin: 10,
+            backgroundColor: colors.surface,
+            padding: 16,
             borderRadius: 12,
-            borderWidth:0.5,
-            borderColor:'#E5E7EB',
+            borderWidth: 1,
+            borderColor: colors.border,
             flexDirection:'row',
             justifyContent:'space-between',
-            alignItems:'center'
+            alignItems:'center',
+            marginVertical: 4,
         }}>
           <View>
 
-            <Text style={{fontSize: 18, fontWeight: "bold"}}>{merchant}</Text>
+            <Text style={{ ...typography.label, color: colors.text }}>{merchant}</Text>
             <View
             style={{flexDirection:'row', gap:8, paddingTop:4}}
             >
-            <Text>{date}</Text>
-            <Text>{category}</Text>
+            <Text style={{ ...typography.caption, color: colors.textMuted }}>{date}</Text>
+            <Text style={{ ...typography.caption, color: colors.textMuted }}>{category}</Text>
             </View>
           </View>
-            <Text>{amount}</Text>
+            <Text style={{ ...typography.label, color: colors.text }}>{amount}</Text>
 
         </View>
     </Pressable>

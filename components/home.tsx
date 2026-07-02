@@ -2,13 +2,15 @@ import Cards from "@/components/cards";
 import { requestNotificationPermissions } from "@/utils/notification";
 import { ParsedExpense } from "@/utils/smsParser";
 import { useCallback, useEffect, useState } from "react";
-import { Modal, NativeModules, Pressable, ScrollView, Text, View, DeviceEventEmitter } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { initDB, insertTransactions, getAllTransactions, updateTransactionCategory } from "@/utils/db";
+import { Modal, NativeModules, Pressable, ScrollView, Text, View, DeviceEventEmitter, TouchableOpacity } from "react-native";
+import { initDB, getAllTransactions, updateTransactionCategory } from "@/utils/db";
 import Fontisto from '@expo/vector-icons/Fontisto';
+import { useNavigation } from "@react-navigation/native";
+import { colors, typography } from "@/utils/theme";
 const CATEGORIES: ParsedExpense["category"][] = ["food", "travelling", "shopping", "others"];
 
 export default function Home() {
+    const navigation = useNavigation<any>();
     const [expenses, setExpenses] = useState<ParsedExpense[]>([]);
     const [totalSpent, setTotalSpent] = useState(0);
     const [isScanning, setIsScanning] = useState(true);
@@ -77,23 +79,22 @@ export default function Home() {
 
     return (
         <>
-            <ScrollView style={{ flex: 1, padding: 20 }}>
-                <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10 }}>Hello, User</Text>
-                <Text>Track. Understand. Save better</Text>
+            <ScrollView style={{ flex: 1, padding: 20, backgroundColor: colors.background }}>
+                <Text style={{ ...typography.title, color: colors.text, marginBottom: 10 }}>Hello, User</Text>
+                <Text style={{ ...typography.body, color: colors.textMuted }}>Track. Understand. Save better</Text>
 
-                <View style={{ backgroundColor: '#6366F1', padding: 16, borderRadius: 12, }}>
+                <View style={{ backgroundColor: colors.brand, marginTop:20, padding: 16, borderRadius: 12, }}>
 
                     <View
                         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}
                     >
 
                         <View>
-
-                            <Text style={{ color: '#fff' }}>
+                            <Text style={{ ...typography.label, color: '#fff' }}>
                                 Today's Spend
                             </Text>
                             <Text
-                                style={{ marginTop: 12, color: '#fff', fontSize: 28 }}
+                                style={{ ...typography.title, color: '#fff', marginTop: 12 }}
                             >
                                 Rs. {totalSpent.toFixed(2)}
                             </Text>
@@ -103,24 +104,44 @@ export default function Home() {
                         <Fontisto name="wallet" size={42} color="#fff" />
                     </View>
                 </View>
-                <Text style={{ fontSize: 20, fontWeight: "600", marginVertical: 10 }}>Recent Expenses</Text>
+
+                <View
+                style={{
+                    marginTop:12,
+                    flexDirection:'row',
+                    justifyContent:'space-between',
+                    alignItems:'center'
+                }}
+                >
+
+                <Text style={{ ...typography.section, marginVertical: 10, color: colors.text }}>Recent Expenses</Text>
+                
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("AllTransactions")}
+                >
+                <Text style={{ ...typography.label, color: colors.brand }}>See all</Text>
+                    
+                </TouchableOpacity>
+                </View>
 
                 {isScanning ? (
-                    <Text style={{ marginTop: 20, color: "#007AFF" }}>Loading expenses...</Text>
+                    <Text style={{ marginTop: 20, color: colors.brand }}>Loading expenses...</Text>
                 ) : expenses.length === 0 ? (
-                    <Text style={{ marginTop: 20, color: "gray" }}>No recent expenses found in your database.</Text>
+                    <Text style={{ marginTop: 20, color: colors.textMuted }}>No recent expenses found in your database.</Text>
                 ) : (
-                    expenses.map((item) => (
-                        <Cards
-                            key={item.id}
-                            merchant={`${item.merchant !== 'Unknown' ? ` ${item.merchant}` : ''}`}
-                            category={`${item.category}`}
-                            amount={`Rs. ${item.amount}`}
-                            date={`${new Date(item.date).toLocaleDateString([], { day: '2-digit', month: 'short' })} ${new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                            onPress={() => setSelectedExpense(item)}
-                        />
-                    ))
-                )}
+
+                        expenses.slice(0, 5).map((item) => (
+                            <Cards
+                                key={item.id}
+                                merchant={`${item.merchant !== 'Unknown' ? ` ${item.merchant}` : ''}`}
+                                category={`${item.category}`}
+                                amount={`Rs. ${item.amount}`}
+                                date={`${new Date(item.date).toLocaleDateString([], { day: '2-digit', month: 'short' })} ${new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                onPress={() => setSelectedExpense(item)}
+                            />
+                        ))
+                )
+                }
                 <View style={{ height: 100 }} />
             </ScrollView>
 
@@ -141,7 +162,7 @@ export default function Home() {
                         paddingHorizontal: 16,
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: "#FF9500",
+                        backgroundColor: colors.warning,
                         shadowColor: "#000",
                         shadowOffset: { width: 0, height: 4 },
                         shadowOpacity: 0.25,
@@ -149,7 +170,7 @@ export default function Home() {
                         elevation: 6,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 15, fontWeight: "700" }}>
+                    <Text style={{ ...typography.button, color: "white" }}>
                         Fake 10 Rs
                     </Text>
                 </Pressable>
@@ -164,7 +185,7 @@ export default function Home() {
                         paddingHorizontal: 16,
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: isScanning ? "#8abfff" : "#007AFF",
+                        backgroundColor: isScanning ? "#8abfff" : colors.brand,
                         shadowColor: "#000",
                         shadowOffset: { width: 0, height: 4 },
                         shadowOpacity: 0.25,
@@ -172,7 +193,7 @@ export default function Home() {
                         elevation: 6,
                     }}
                 >
-                    <Text style={{ color: "white", fontSize: 15, fontWeight: "700" }}>
+                    <Text style={{ ...typography.button, color: "white" }}>
                         {isScanning ? "Refreshing" : "Refresh"}
                     </Text>
                 </Pressable>
@@ -185,13 +206,13 @@ export default function Home() {
                 onRequestClose={() => setSelectedExpense(null)}
             >
                 <Pressable
-                    style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.35)" }}
+                    style={{ flex: 1, justifyContent: "flex-end", backgroundColor: colors.overlay }}
                     onPress={() => setSelectedExpense(null)}
                 >
-                    <Pressable style={{ backgroundColor: "white", padding: 24, borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
-                        <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 6 }}>Edit category</Text>
+                    <Pressable style={{ backgroundColor: colors.surface, padding: 24, borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+                        <Text style={{ ...typography.section, marginBottom: 6, color: colors.text }}>Edit category</Text>
                         {selectedExpense ? (
-                            <Text style={{ color: "gray", marginBottom: 18 }}>
+                            <Text style={{ color: colors.textMuted, marginBottom: 18 }}>
                                 Rs. {selectedExpense.amount} • {selectedExpense.merchant}
                             </Text>
                         ) : null}
@@ -207,10 +228,10 @@ export default function Home() {
                                         paddingHorizontal: 16,
                                         borderRadius: 10,
                                         marginBottom: 10,
-                                        backgroundColor: isSelected ? "#007AFF" : "#f2f2f6",
+                                        backgroundColor: isSelected ? colors.brand : colors.surfaceMuted,
                                     }}
                                 >
-                                    <Text style={{ fontSize: 16, fontWeight: "600", color: isSelected ? "white" : "#111" }}>
+                                    <Text style={{ ...typography.label, color: isSelected ? "white" : colors.text }}>
                                         {category.charAt(0).toUpperCase() + category.slice(1)}
                                     </Text>
                                 </Pressable>
@@ -218,7 +239,7 @@ export default function Home() {
                         })}
 
                         <Pressable onPress={() => setSelectedExpense(null)} style={{ paddingVertical: 14, alignItems: "center" }}>
-                            <Text style={{ color: "#007AFF", fontSize: 16, fontWeight: "600" }}>Cancel</Text>
+                            <Text style={{ ...typography.label, color: colors.brand }}>Cancel</Text>
                         </Pressable>
                     </Pressable>
                 </Pressable>
