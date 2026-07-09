@@ -152,7 +152,7 @@ export default function Home() {
                 flexDirection: "row",
                 gap: 12
             }}>
-                <Pressable
+                {/* <Pressable
                     disabled={isScanning}
                     onPress={triggerFakeNotification}
                     style={{
@@ -173,7 +173,7 @@ export default function Home() {
                     <Text style={{ ...typography.button, color: "white" }}>
                         Fake 10 Rs
                     </Text>
-                </Pressable>
+                </Pressable> */}
 
                 <Pressable
                     disabled={isScanning}

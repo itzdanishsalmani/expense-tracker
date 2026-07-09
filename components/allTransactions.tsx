@@ -3,8 +3,10 @@ import { getAllTransactions, updateTransactionCategory } from "@/utils/db";
 import { ParsedExpense } from "@/utils/smsParser";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { Modal, Pressable, ScrollView, Text } from "react-native";
+import { Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { colors, typography } from "@/utils/theme";
+import AntDesign from '@expo/vector-icons/AntDesign';
+import { useNavigation } from "@react-navigation/native";
 
 const CATEGORIES: ParsedExpense["category"][] = [
   "food",
@@ -18,6 +20,7 @@ export default function AllTransactions() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedExpense, setSelectedExpense] = useState<ParsedExpense | null>(null);
 
+  const navigation = useNavigation();
   const loadTransactions = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -50,7 +53,25 @@ export default function AllTransactions() {
 
   return (
     <>
+      <View
+        style={{
+          backgroundColor: colors.background,
+          paddingHorizontal: 20,
+          paddingTop: 20,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="arrow-left" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={{ ...typography.section, color: colors.text }}>All Transactions</Text>
+      </View>
+
       <ScrollView style={{ flex: 1, padding: 20, backgroundColor: colors.background }}>
+
+
         {isLoading ? (
           <Text style={{ color: colors.brand }}>Loading transactions...</Text>
         ) : expenses.length === 0 ? (

@@ -39,5 +39,13 @@ yarn-error.*
 app-example
 
 # generated native folders
-/ios
-/android
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+
+# Ignore generated binaries
+*.apk
+*.aab

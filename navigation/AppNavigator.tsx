@@ -7,32 +7,32 @@ import AllTransactions from "@/components/allTransactions";
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  
 
   return (
     <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{ headerShown: false, animation: "slide_from_right" }}
-        >
-          <Stack.Screen
-            name="MainTabNavigator"
-            component={MainTabNavigator}
-            options={{ animation: "none" }}
-          />
+      <Stack.Navigator
+        screenOptions={{ headerShown: false, animation: "slide_from_right" }}
+      >
+        <Stack.Screen
+          name="MainTabNavigator"
+          component={MainTabNavigator}
+          options={{ animation: "slide_from_right" }}
+        />
 
-          <Stack.Screen
-            name="MonthTransactions"
-            component={MonthTransactions}
-          />
+        <Stack.Screen
+          name="MonthTransactions"
+          component={MonthTransactions}
+          options={{ animation: "slide_from_right" }}
+        />
 
-          <Stack.Screen
-            name="AllTransactions"
-            component={AllTransactions}
-            options={{ headerShown: true, title: "All Transactions" }}
-          />
+        <Stack.Screen
+          name="AllTransactions"
+          component={AllTransactions}
+          options={{ animation: "slide_from_right" }}
+        />
 
-        </Stack.Navigator>
-      
+      </Stack.Navigator>
+
     </NavigationContainer>
   );
 }
