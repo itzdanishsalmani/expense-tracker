@@ -2,11 +2,15 @@
 import AppNavigator from "@/navigation/AppNavigator";
 import * as Notifications from 'expo-notifications';
 import React, { useEffect } from "react";
-import { DeviceEventEmitter, StatusBar } from "react-native";
+import { Alert, DeviceEventEmitter, Linking, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { getTransactionsByDateRange, insertTransactions } from "./utils/db";
 import { parseNotificationToExpense } from "./utils/notificationParser";
+
+const APP_VERSION = process.env.EXPO_PUBLIC_APP_VERSION;
+const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+const PLAY_STORE_URL = process.env.EXPO_PUBLIC_PLAY_STORE_URL;
 
 type NativeNotificationEvent = {
   title?: string;
@@ -87,6 +91,42 @@ DeviceEventEmitter.addListener("PaymentNotification", async (event: NativeNotifi
 });
 
 export default function App() {
+  async function checkVersion() {
+    try {
+      const response = await fetch(`${BASE_URL}/api/check-version?version=${APP_VERSION}`);
+      console.log("[VersionCheck] request", { url: response.url, status: response.status });
+      if (!response.ok) {
+        console.log("[VersionCheck] request failed", response.status);
+        return;
+      }
+
+      const result = await response.json();
+      const updateRequiredValue = result?.isUpdateRequired ?? result?.data?.isUpdateRequired;
+      const isUpdateRequired = updateRequiredValue === true || updateRequiredValue === "true";
+      console.log("[VersionCheck] result", { result, isUpdateRequired, updateRequiredValue });
+      
+      if (isUpdateRequired) {
+        Alert.alert(
+          "Update available",
+          "Please update SpendSync from the Play Store.",
+          [
+            { text: "Later", style: "cancel" },
+            {
+              text: "Update",
+              onPress: () => Linking.openURL(PLAY_STORE_URL || ''),
+            },
+          ],
+        );
+      }
+    } catch(error) {
+      console.log("[VersionCheck] request error", error);
+    }
+  }
+
+  useEffect(() => {
+    checkVersion();
+  }, []);
+
   useEffect(() => {
     // Expo notification listener only receives notifications delivered to this app.
     const expoSubscription = Notifications.addNotificationReceivedListener(async (notification) => {
@@ -118,4 +158,3 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
-
