@@ -49,3 +49,5 @@ android/.idea/
 # Ignore generated binaries
 *.apk
 *.aab
+
+credentials.json
