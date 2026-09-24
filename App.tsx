@@ -1,10 +1,12 @@
 
 import AppNavigator from "@/navigation/AppNavigator";
 import * as Notifications from 'expo-notifications';
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, DeviceEventEmitter, Linking, StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Login from "./components/Login";
 import { getTransactionsByDateRange, insertTransactions } from "./utils/db";
 import { parseNotificationToExpense } from "./utils/notificationParser";
 
@@ -91,6 +93,25 @@ DeviceEventEmitter.addListener("PaymentNotification", async (event: NativeNotifi
 });
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        if (token) {
+          setIsAuthenticated(true);
+        }
+      } catch (e) {
+        console.log('Error reading token', e);
+      } finally {
+        setIsReady(true);
+      }
+    };
+    checkAuth();
+  }, []);
+
   async function checkVersion() {
     try {
       const response = await fetch(`${BASE_URL}/api/check-version?version=${APP_VERSION}`);
@@ -143,6 +164,10 @@ export default function App() {
     };
   }, []);
 
+  if (!isReady) {
+    return null; // Wait until auth check finishes
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -152,7 +177,11 @@ export default function App() {
           style={{ flex: 1 }}
         >
           <StatusBar />
-          <AppNavigator />
+          {isAuthenticated ? (
+            <AppNavigator />
+          ) : (
+            <Login onLoginSuccess={() => setIsAuthenticated(true)} />
+          )}
         </SafeAreaView>
       </SafeAreaProvider>
     </GestureHandlerRootView>
