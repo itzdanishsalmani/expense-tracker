@@ -6,47 +6,45 @@ import {
   StyleSheet,
   TextInput,
   KeyboardType,
-  SafeAreaView,
+  Alert,
 } from 'react-native';
+import { colors, typography } from '../utils/theme';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+import { Login } from '@/utils/api';
+import type { LoginBodyData } from '@/utils/api';
+import { useAuth } from '@/context/authContext';
 
-interface RegisterProps {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export default function Login() {
-  const [userData, setUserData] = useState<RegisterProps>({
-    name: '',
+export default function LoginPage() {
+  const { login } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [userData, setUserData] = useState<LoginBodyData>({
     email: '',
     password: '',
   });
 
-  function RegisterUser() {
-    // TODO: handle registration
+  async function LoginUser() {
+    const result = await Login(userData);
+    if (result.success) {
+      await login(result);  // saves token + flips isAuthenticated → navigator switches automatically
+    } else {
+      Alert.alert(result.success ? 'Success' : 'Error', result.message);
+    }
   }
 
   return (
-    <SafeAreaView style={styles.outerContainer}>
+    <View style={styles.outerContainer}>
       <View style={styles.card}>
         {/* Header */}
         <View style={styles.headerContainer}>
-          <View style={styles.iconCircle}>
-            <Text style={styles.iconText}>✦</Text>
-          </View>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join us today. Fill in your details below.</Text>
+       
+          <Text style={styles.title}>Login</Text>
+          <Text style={styles.subtitle}>Welcome back. Fill in your details below.</Text>
         </View>
 
         {/* Inputs */}
         <View style={styles.form}>
-          <Input
-            label="Full Name"
-            placeholder="John Doe"
-            keyboardType="default"
-            field="name"
-            setUserData={setUserData}
-          />
           <Input
             label="Email Address"
             placeholder="john@example.com"
@@ -65,34 +63,36 @@ export default function Login() {
         </View>
 
         {/* Register Button */}
-        <TouchableOpacity style={styles.registerButton} onPress={RegisterUser} activeOpacity={0.85}>
-          <Text style={styles.registerButtonText}>Register</Text>
+        <TouchableOpacity style={styles.registerButton} onPress={LoginUser} activeOpacity={0.85}>
+          <Text style={styles.registerButtonText}>Login</Text>
         </TouchableOpacity>
 
         {/* Footer */}
-        <Text style={styles.footerText}>
-          Already have an account?{' '}
-          <Text style={styles.footerLink}>Sign in</Text>
-        </Text>
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Signup')} activeOpacity={0.7}>
+            <Text style={styles.footerLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#1A56F0',
+    backgroundColor: colors.brand,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   card: {
     width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 28,
     padding: 28,
-    shadowColor: '#000',
+    shadowColor: colors.text,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
@@ -106,58 +106,60 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: '#1A56F0',
+    backgroundColor: colors.brand,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
   },
   iconText: {
-    fontSize: 22,
-    color: '#fff',
+    fontSize: typography.size.xl,
+    color: colors.surface,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#111827',
-    letterSpacing: -0.5,
+    ...typography.title,
+    color: colors.text,
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
+    ...typography.body,
+    color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 20,
   },
   form: {
     gap: 16,
     marginBottom: 24,
   },
   registerButton: {
-    backgroundColor: '#1A56F0',
+    backgroundColor: colors.brand,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#1A56F0',
+    shadowColor: colors.brand,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 6,
   },
   registerButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    ...typography.button,
+    color: colors.surface,
     letterSpacing: 0.3,
   },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   footerText: {
-    textAlign: 'center',
-    fontSize: 14,
-    color: '#6B7280',
+    ...typography.label,
+    color: colors.textMuted,
+    fontWeight: typography.weight.regular,
   },
   footerLink: {
-    color: '#1A56F0',
-    fontWeight: '700',
+    ...typography.label,
+    color: colors.brand,
+    fontWeight: typography.weight.bold,
   },
 });
 
@@ -168,8 +170,8 @@ interface InputProps {
   placeholder: string;
   keyboardType: KeyboardType;
   isKeyboardSecured?: boolean;
-  field: keyof RegisterProps;
-  setUserData: React.Dispatch<React.SetStateAction<RegisterProps>>;
+  field: keyof LoginBodyData;
+  setUserData: React.Dispatch<React.SetStateAction<LoginBodyData>>;
 }
 
 export function Input({
@@ -188,7 +190,7 @@ export function Input({
       <TextInput
         style={[inputStyles.input, focused && inputStyles.inputFocused]}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textSoft}
         keyboardType={keyboardType}
         secureTextEntry={isKeyboardSecured ?? false}
         onFocus={() => setFocused(true)}
@@ -201,24 +203,23 @@ export function Input({
 
 const inputStyles = StyleSheet.create({
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
+    ...typography.label,
+    color: colors.text,
     marginBottom: 6,
     letterSpacing: 0.2,
   },
   input: {
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    fontSize: 15,
-    color: '#111827',
-    backgroundColor: '#F9FAFB',
+    ...typography.body,
+    color: colors.text,
+    backgroundColor: colors.surfaceMuted,
   },
   inputFocused: {
-    borderColor: '#1A56F0',
-    backgroundColor: '#fff',
+    borderColor: colors.brand,
+    backgroundColor: colors.surface,
   },
 });

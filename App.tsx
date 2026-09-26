@@ -1,14 +1,14 @@
 
 import AppNavigator from "@/navigation/AppNavigator";
 import * as Notifications from 'expo-notifications';
-import React, { useEffect, useState } from "react";
-import { Alert, DeviceEventEmitter, Linking, StatusBar } from "react-native";
+import React, { useEffect } from "react";
+import { Alert, DeviceEventEmitter, Linking, StatusBar, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Login from "./components/Login";
-import { getTransactionsByDateRange, insertTransactions } from "./utils/db";
-import { parseNotificationToExpense } from "./utils/notificationParser";
+import { AuthProvider } from "@/context/authContext";
+import { getTransactionsByDateRange, insertTransactions } from "@/utils/db";
+import { parseNotificationToExpense } from "@/utils/notificationParser";
+import { useNetwork } from "@/utils/network";
 
 const APP_VERSION = process.env.EXPO_PUBLIC_APP_VERSION;
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
@@ -93,24 +93,9 @@ DeviceEventEmitter.addListener("PaymentNotification", async (event: NativeNotifi
 });
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+    const { isConnected, isInternetReachable } = useNetwork();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
-        if (token) {
-          setIsAuthenticated(true);
-        }
-      } catch (e) {
-        console.log('Error reading token', e);
-      } finally {
-        setIsReady(true);
-      }
-    };
-    checkAuth();
-  }, []);
+
 
   async function checkVersion() {
     try {
@@ -144,9 +129,9 @@ export default function App() {
     }
   }
 
-  useEffect(() => {
-    checkVersion();
-  }, []);
+  // useEffect(() => {
+  //   checkVersion();
+  // }, []);
 
   useEffect(() => {
     // Expo notification listener only receives notifications delivered to this app.
@@ -164,25 +149,27 @@ export default function App() {
     };
   }, []);
 
-  if (!isReady) {
-    return null; // Wait until auth check finishes
-  }
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        {/* <AuthProvider> */}
-        <SafeAreaView
-          edges={["top", "left", "right", "bottom"]}
-          style={{ flex: 1 }}
-        >
-          <StatusBar />
-          {isAuthenticated ? (
+        <AuthProvider>
+          <SafeAreaView
+            edges={["top", "left", "right", "bottom"]}
+            style={{ flex: 1 }}
+          >
+            <StatusBar />
             <AppNavigator />
-          ) : (
-            <Login onLoginSuccess={() => setIsAuthenticated(true)} />
-          )}
-        </SafeAreaView>
+            <View>
+                    {(!isConnected || !isInternetReachable) && (
+        
+          <Text>
+            No Internet Connection. Please check your network.
+          </Text>
+              )}
+
+            </View>
+          </SafeAreaView>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

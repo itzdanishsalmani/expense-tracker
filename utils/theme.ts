@@ -37,7 +37,7 @@ export const typography = {
     relaxed: 1.5,
   },
   title: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: "700" as const,
     lineHeight: 32,
   },
@@ -52,7 +52,7 @@ export const typography = {
     lineHeight: 24,
   },
   body: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "400" as const,
     lineHeight: 22,
   },

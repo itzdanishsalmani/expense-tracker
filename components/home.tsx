@@ -7,10 +7,15 @@ import { initDB, getAllTransactions, updateTransactionCategory } from "@/utils/d
 import Fontisto from '@expo/vector-icons/Fontisto';
 import { useNavigation } from "@react-navigation/native";
 import { colors, typography } from "@/utils/theme";
+import { getUserData } from "@/utils/tokenStore";
+import { useAuth } from "@/context/authContext";
+import { SyncDatabase } from "@/utils/syncDatabase";
+
 const CATEGORIES: ParsedExpense["category"][] = ["food", "travelling", "shopping", "others"];
 
 export default function Home() {
     const navigation = useNavigation<any>();
+    const { userData } = useAuth()
     const [expenses, setExpenses] = useState<ParsedExpense[]>([]);
     const [totalSpent, setTotalSpent] = useState(0);
     const [isScanning, setIsScanning] = useState(true);
@@ -35,7 +40,7 @@ export default function Home() {
             // Initialize SQLite DB
             await initDB();
 
-            await requestNotificationPermissions();
+            // await requestNotificationPermissions();
 
             // Render from SQLite database
             await refreshExpenseList();
@@ -49,6 +54,13 @@ export default function Home() {
     useEffect(() => {
         loadExpenses();
     }, [loadExpenses]);
+
+    useEffect(() => {
+        const sync = async () => {
+            await SyncDatabase();
+        };
+        sync();
+    }, [])
 
     const handleCategoryChange = async (category: ParsedExpense["category"]) => {
         if (!selectedExpense) return;
@@ -80,7 +92,7 @@ export default function Home() {
     return (
         <>
             <ScrollView style={{ flex: 1, padding: 20, backgroundColor: colors.background }}>
-                <Text style={{ ...typography.title, color: colors.text, marginBottom: 10 }}>Hello, User</Text>
+                <Text style={{ ...typography.title, color: colors.text, marginBottom: 10 }}>Hello, {userData?.name}</Text>
                 <Text style={{ ...typography.body, color: colors.textMuted }}>Track. Understand. Save better</Text>
 
                 <View style={{ backgroundColor: colors.brand, marginTop:20, padding: 16, borderRadius: 12, }}>
