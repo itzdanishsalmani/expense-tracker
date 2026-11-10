@@ -1,12 +1,20 @@
-import { Alert, Linking, NativeModules } from "react-native";
+import { Alert, Linking, NativeModules, Platform } from "react-native";
 
 export async function requestNotificationPermissions(): Promise<boolean> {
+  if (Platform.OS !== "android") {
+    return false;
+  }
+
   const { SmsReader } = NativeModules;
   
   if (SmsReader && SmsReader.hasNotificationPermission) {
-    const hasPermission = await SmsReader.hasNotificationPermission();
-    if (hasPermission) {
-      return true; // Already granted, no need to ask
+    try {
+      const hasPermission = await SmsReader.hasNotificationPermission();
+      if (hasPermission) {
+        return true; // Already granted, no need to ask
+      }
+    } catch (e) {
+      console.warn("Error checking notification permission:", e);
     }
   }
 
@@ -17,9 +25,13 @@ export async function requestNotificationPermissions(): Promise<boolean> {
       {
         text: "Open Settings",
         onPress: async () => {
-          await Linking.sendIntent(
-            "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"
-          );
+          try {
+            await Linking.sendIntent(
+              "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"
+            );
+          } catch (e) {
+            console.warn("Error opening notification settings:", e);
+          }
         },
       },
       {

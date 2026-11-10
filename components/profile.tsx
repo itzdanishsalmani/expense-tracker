@@ -8,13 +8,9 @@ import { colors, typography } from "@/utils/theme";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Fontisto from "@expo/vector-icons/Fontisto";
 import Ionicons from "@expo/vector-icons/Ionicons";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  food: '#FF9500',
-  travelling: '#007AFF',
-  shopping: '#FF2D55',
-  others: '#8E8E93'
-};
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CATEGORY_COLORS, createEmptyCategoryData, formatCategory } from "@/constants/categories";
 
 type MonthlyExpenseData = {
   key: string;
@@ -23,11 +19,9 @@ type MonthlyExpenseData = {
   categories: Record<string, number>;
 };
 
-const createEmptyCategoryData = () => ({ food: 0, travelling: 0, shopping: 0, others: 0 });
-
 const buildChartData = (categoryData: Record<string, number>) => (
   Object.entries(categoryData).map(([cat, val]) => ({
-    label: cat.charAt(0).toUpperCase() + cat.slice(1),
+    label: formatCategory(cat),
     value: val,
     color: CATEGORY_COLORS[cat] || '#8E8E93'
   }))
@@ -39,6 +33,7 @@ const getMonthLabel = (date: Date) => (
 
 export default function Profile() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [categoryData, setCategoryData] = useState<Record<string, number>>({});
   const [monthlyData, setMonthlyData] = useState<MonthlyExpenseData[]>([]);
   const [totalParsed, setTotalParsed] = useState(0);
@@ -92,92 +87,150 @@ export default function Profile() {
   const chartData = buildChartData(categoryData);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ padding: 20, paddingTop: 28 }}>
-        <View style={{ backgroundColor: colors.brand, padding: 18, borderRadius: 16, marginBottom: 16 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ ...typography.label, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>Insight</Text>
-              <Text style={{ ...typography.title, color: "white", marginBottom: 6 }}>Profile overview</Text>
-              <Text style={{ ...typography.body, color: "rgba(255,255,255,0.85)" }}>
-                {totalParsed} transactions analyzed
-              </Text>
+// Ensure this import is added at the top if it's missing, but I'll add the UI components first.
+
+      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+        <LinearGradient
+            colors={['#7C3AED', '#854be9ff', '#FFFFFF']}
+            style={{ paddingTop: insets.top + 16, padding: 16, paddingBottom: 16 }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+        >
+                <View>
+                    <Text style={{ ...typography.title, color: '#FFFFFF', fontSize: 20 }}>Reports</Text>
+                    <Text style={{ ...typography.body, color: '#E9D8FD', fontSize: 12 }}>Analytics and insights</Text>
+                </View>
+              
+
+            <LinearGradient
+                colors={['#7C3AED', '#7C3AED', '#A78BFA']}
+                start={{ x: 1, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ marginTop: 20, padding: 16, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)' }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ ...typography.label, color: "rgba(255,255,255,0.85)", marginBottom: 2, fontWeight: '400', fontSize: 12 }}>Insight</Text>
+                  <Text style={{ ...typography.title, color: "white", marginBottom: 4, fontSize: 20 }}>Profile overview</Text>
+                  <Text style={{ ...typography.body, color: "rgba(255,255,255,0.85)", fontSize: 12 }}>
+                    {totalParsed} transactions analyzed
+                  </Text>
+                </View>
+                <View style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255,255,255,0.15)",
+                }}>
+                  <MaterialIcons name="auto-graph" size={22} color="#fff" />
+                </View>
+              </View>
+            </LinearGradient>
+        </LinearGradient>
+
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          style={{ flex: 1 }} 
+          contentContainerStyle={{ 
+            padding: 16, 
+            paddingBottom: insets.bottom > 0 ? insets.bottom + 80 : 90 
+          }}
+        >
+
+        <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+          <View style={{ flex: 1, backgroundColor: colors.surface, padding: 14, borderRadius: 12, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(124, 58, 237, 0.1)', alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+              <Fontisto name="wallet" size={14} color={colors.brand} />
             </View>
-            <View style={{
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "rgba(255,255,255,0.15)",
-            }}>
-              <MaterialIcons name="auto-graph" size={26} color="#fff" />
+            <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4, fontSize: 11 }}>Total Expense</Text>
+            <Text style={{ ...typography.section, color: colors.text, fontSize: 18, marginBottom: 8 }}>Rs. {totalSpent.toFixed(2)}</Text>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(34, 197, 94, 0.1)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 8 }}>
+                    <Ionicons name="arrow-down" size={8} color="#22c55e" />
+                    <Text style={{ color: '#22c55e', fontSize: 9, fontWeight: '600', marginLeft: 2 }}>12%</Text>
+                </View>
+                <Text style={{ fontSize: 9, color: colors.textMuted }}>vs last month</Text>
+            </View>
+          </View>
+          
+          <View style={{ flex: 1, backgroundColor: colors.surface, padding: 14, borderRadius: 12, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(124, 58, 237, 0.1)', alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+              <Ionicons name="list-outline" size={16} color={colors.brand} />
+            </View>
+            <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4, fontSize: 11 }}>Tracked Items</Text>
+            <Text style={{ ...typography.section, color: colors.text, fontSize: 18, marginBottom: 8 }}>{totalParsed}</Text>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(34, 197, 94, 0.1)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 8 }}>
+                    <Ionicons name="arrow-up" size={8} color="#22c55e" />
+                    <Text style={{ color: '#22c55e', fontSize: 9, fontWeight: '600', marginLeft: 2 }}>2 new</Text>
+                </View>
+                <Text style={{ fontSize: 9, color: colors.textMuted }}>vs last month</Text>
             </View>
           </View>
         </View>
 
-        <View style={{ flexDirection: "row", gap: 12, marginBottom: 18 }}>
-          <View style={{ flex: 1, backgroundColor: colors.surface, padding: 16, borderRadius: 14, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.brandSoft, alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-              <Fontisto name="wallet" size={16} color={colors.brand} />
-            </View>
-            <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4 }}>Total Expense</Text>
-            <Text style={{ ...typography.section, color: colors.text }}>Rs. {totalSpent.toFixed(2)}</Text>
+        <View style={{ backgroundColor: colors.surface, padding: 16, borderRadius: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ ...typography.section, color: colors.text, fontSize: 16 }}>Category Breakdown</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.brand} />
           </View>
-          <View style={{ flex: 1, backgroundColor: colors.surface, padding: 16, borderRadius: 14, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceMuted, alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-              <Ionicons name="list-outline" size={18} color={colors.text} />
-            </View>
-            <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4 }}>Tracked Items</Text>
-            <Text style={{ ...typography.section, color: colors.text }}>{totalParsed}</Text>
-          </View>
-        </View>
-
-        <View style={{ backgroundColor: colors.surface, padding: 20, borderRadius: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 18 }}>
-          <Text style={{ ...typography.section, marginBottom: 10, color: colors.text }}>Category Breakdown</Text>
+          
           {chartData.reduce((acc, curr) => acc + curr.value, 0) === 0 ? (
-            <Text style={{ ...typography.body, textAlign: 'center', marginTop: 40, marginBottom: 40, color: colors.textMuted }}>No scanned expenses found.</Text>
+            <Text style={{ ...typography.body, textAlign: 'center', marginTop: 20, marginBottom: 20, color: colors.textMuted }}>No scanned expenses found.</Text>
           ) : (
-            <CategoryChart data={chartData} />
+            <CategoryChart data={chartData} size={140} strokeWidth={20} />
           )}
         </View>
 
-        <Text style={{ ...typography.heading, color: colors.text, marginBottom: 14 }}>Month Wise</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ ...typography.section, color: colors.text, fontSize: 16 }}>Month Wise</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.brand} />
+        </View>
         {monthlyData.length === 0 ? (
-          <View style={{ backgroundColor: colors.surface, padding: 20, borderRadius: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 40 }}>
+          <View style={{ backgroundColor: colors.surface, padding: 16, borderRadius: 14, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 40 }}>
             <Text style={{ ...typography.body, textAlign: 'center', color: colors.textMuted }}>No monthly expenses found.</Text>
           </View>
         ) : (
-          monthlyData.map((month) => {
-            const monthChartData = buildChartData(month.categories);
-
-            return (
-              <Pressable
-                key={month.key}
-                onPress={() => navigation.navigate("MonthTransactions", { monthKey: month.key, label: month.label })}
-                style={{ backgroundColor: colors.surface, padding: 20, borderRadius: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 20 }}
-              >
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                  <View>
-                    <Text style={{ ...typography.section, marginBottom: 4, color: colors.text }}>{month.label}</Text>
-                    <Text style={{ ...typography.caption, color: colors.textMuted }}>{month.total.toFixed(2)} total spent</Text>
-                  </View>
-                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.brandSoft, alignItems: "center", justifyContent: "center" }}>
-                    <MaterialIcons name="calendar-month" size={20} color={colors.brand} />
-                  </View>
-                </View>
-                <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 14 }} />
-                <CategoryChart data={monthChartData} size={150} strokeWidth={24} />
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  <Text style={{ ...typography.label, color: colors.brand, textAlign: "center" }}>View messages</Text>
-                  <Ionicons name="chevron-forward" size={14} color={colors.brand} />
-                </View>
-              </Pressable>
-            );
-          })
+          <View style={{ backgroundColor: colors.surface, padding: 16, paddingTop: 30, borderRadius: 14, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 40 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap:16, height: 100 }}>
+              {(() => {
+                // Reverse to show oldest to newest left to right, take last 6 months
+                const chartMonths = [...monthlyData].reverse().slice(-6);
+                const maxTotal = Math.max(...chartMonths.map(m => m.total), 1);
+                
+                return chartMonths.map((month, index) => {
+                  const isActive = index === chartMonths.length - 1; // Highlight the latest month
+                  const barHeight = (month.total / maxTotal) * 80;
+                  const monthName = new Date(month.key + '-01').toLocaleString('default', { month: 'short' });
+                  
+                  return (
+                    <View key={month.key} style={{ alignItems: 'center' }}>
+                      <Pressable 
+                        onPress={() => navigation.navigate("MonthTransactions", { monthKey: month.key, label: month.label })}
+                        style={{
+                          width: 28,
+                          height: Math.max(barHeight, 4), // At least 4px tall
+                          backgroundColor: isActive ? colors.brand : 'rgba(124, 58, 237, 0.3)',
+                          borderRadius: 4,
+                          marginBottom: 6
+                        }}
+                      />
+                      <Text style={{ fontSize: 9, color: isActive ? colors.text : colors.textMuted, fontWeight: isActive ? '600' : '400' }}>
+                        {monthName}
+                      </Text>
+                    </View>
+                  );
+                });
+              })()}
+            </View>
+          </View>
         )}
 
-      </View>
     </ScrollView>
+      </View>
   );
 }

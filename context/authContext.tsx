@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (result:any) => Promise<void>;
   logout: () => Promise<void>;
   userData: any;
+  updateUserData: (updated: any) => Promise<void>;
 }
 
 // ── Create context with a safe default ────────────────────────────────────
@@ -17,6 +18,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   logout: async () => {},
   userData: null,
+  updateUserData: async () => {},
 });
 
 // ── Provider — wrap your app root with this ───────────────────────────────
@@ -53,8 +55,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
   }
 
+  // Call on profile / user data update
+  async function updateUserData(updated: any) {
+    setUserData((prev: any) => {
+      const merged = { ...prev, ...updated };
+      AsyncStorage.setItem("userData", JSON.stringify(merged)).catch((err) =>
+        console.error("Failed to save updated userData to storage", err)
+      );
+      return merged;
+    });
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, userData }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout, userData, updateUserData }}>
       {children}
     </AuthContext.Provider>
   );

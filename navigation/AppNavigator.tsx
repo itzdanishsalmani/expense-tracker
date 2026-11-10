@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import MonthTransactions from "@/components/MonthTransactions";
 import AllTransactions from "@/components/allTransactions";
+import AddTransaction from "@/components/AddTransaction";
 import Login from "@/components/Login";
 import Signup from "@/components/Signup";
 import { ActivityIndicator, View } from "react-native";
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   MainTabNavigator: undefined;
   MonthTransactions: undefined;
   AllTransactions: undefined;
+  AddTransaction: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +46,7 @@ export default function AppNavigator() {
             <Stack.Screen name="MainTabNavigator" component={MainTabNavigator} />
             <Stack.Screen name="MonthTransactions" component={MonthTransactions} />
             <Stack.Screen name="AllTransactions" component={AllTransactions} />
+            <Stack.Screen name="AddTransaction" component={AddTransaction} options={{ presentation: 'modal' }} />
           </>
         ) : (
           // ── Auth Screens ─────────────────────────────────────

@@ -1,3 +1,6 @@
+import { CategoryType } from '@/constants/categories';
+import uuid from 'react-native-uuid';
+
 export interface SmsMessage {
     body: string;
     date: number;
@@ -6,16 +9,16 @@ export interface SmsMessage {
 export interface ParsedExpense {
     id: string;
     amount: number;
-    category: "travelling" | "food" | "shopping" | "others";
+    category: CategoryType;
     date: number;
     originalText: string;
     merchant: string;
 }
 
 const CATEGORIES = {
-    food: ["swiggy", "zomato", "zepto", "blinkit", "mcdonald", "kfc", "burger king", "dominos", "pizza hut", "food", "restaurant", "cafe", "starbucks"],
-    travelling: ["uber", "ola", "rapido", "irctc", "makemytrip", "redbus", "flight", "metro", "petrol", "fuel", "indian oil", "bharat petroleum", "hpcl"],
-    shopping: ["amazon", "flipkart", "myntra", "ajio", "zara", "h&m", "shopping", "mall", "mart", "dmart", "reliance", "lifestyle", "shopee", "meesho"],
+    FOOD: ["swiggy", "zomato", "zepto", "blinkit", "mcdonald", "kfc", "burger king", "dominos", "pizza hut", "food", "restaurant", "cafe", "starbucks"],
+    TRAVEL: ["uber", "ola", "rapido", "irctc", "makemytrip", "redbus", "flight", "metro", "petrol", "fuel", "indian oil", "bharat petroleum", "hpcl"],
+    SHOPPING: ["amazon", "flipkart", "myntra", "ajio", "zara", "h&m", "shopping", "mall", "mart", "dmart", "reliance", "lifestyle", "shopee", "meesho"],
 };
 
 export function maskSensitiveMerchant(value: string): string {
@@ -101,7 +104,7 @@ export function parseAndCategorizeExpenses(smsList: SmsMessage[], existingTransa
             if (isNaN(amount) || amount <= 0) return;
 
             // Find category based on keywords
-            let category: ParsedExpense["category"] = "others";
+            let category: ParsedExpense["category"] = "OTHERS";
             for (const [catName, keywords] of Object.entries(CATEGORIES)) {
                 if (keywords.some(kw => lowerBody.includes(kw))) {
                     category = catName as ParsedExpense["category"];
@@ -118,9 +121,8 @@ export function parseAndCategorizeExpenses(smsList: SmsMessage[], existingTransa
                 tx.merchant === merchant
             );
             if (!isDuplicate) {
-                const uniqueKey = `${amount}_${sms.date}`;
                 const parsed: ParsedExpense = {
-                    id: uniqueKey,
+                    id: uuid.v4() as string,
                     amount,
                     category,
                     date: sms.date,

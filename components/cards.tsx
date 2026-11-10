@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { colors, typography } from "@/utils/theme";
+import { getCategoryDisplayName } from "@/constants/categories";
 
 export default function Cards({
   merchant,
@@ -20,8 +21,8 @@ export default function Cards({
             backgroundColor: colors.surface,
             padding: 16,
             borderRadius: 12,
-            borderWidth: 1,
-            borderColor: colors.border,
+            borderWidth: 0.5,
+            borderColor: "#D3D3D3",
             flexDirection:'row',
             justifyContent:'space-between',
             alignItems:'center',
@@ -34,7 +35,7 @@ export default function Cards({
             style={{flexDirection:'row', gap:8, paddingTop:4}}
             >
             <Text style={{ ...typography.caption, color: colors.textMuted }}>{date}</Text>
-            <Text style={{ ...typography.caption, color: colors.textMuted }}>{category}</Text>
+            <Text style={{ ...typography.caption, color: colors.textMuted }}>{getCategoryDisplayName(category)}</Text>
             </View>
           </View>
             <Text style={{ ...typography.label, color: colors.text }}>{amount}</Text>

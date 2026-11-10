@@ -32,7 +32,7 @@ export const apiConnector = async <T = unknown>(
   responseType?: ResponseType,
 ): Promise<ApiResponse<T>> => {
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL + "/api";
-
+console.log( `${BASE_URL}${url}, ${JSON.stringify(bodyData)}`)
   try {
     const response = await axiosInstance<ApiResponse<T>>({
       method,
@@ -41,6 +41,7 @@ export const apiConnector = async <T = unknown>(
       params: params ?? {},
       responseType: responseType ?? 'json',
     });
+    console.log(url)
     return response.data;
   } catch (error: any) {
     // HTTP error with a BE response body (e.g. 401, 400)

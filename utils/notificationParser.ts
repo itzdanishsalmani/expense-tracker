@@ -1,4 +1,5 @@
 import { ParsedExpense } from "./smsParser";
+import uuid from 'react-native-uuid';
 
 export interface NotificationData {
   title: string;
@@ -38,10 +39,10 @@ export function parseNotificationToExpense(notification: NotificationData): Pars
   if (merchantMatch) merchant = merchantMatch[1];
 
   // Dummy category (improve as needed)
-  const category: ParsedExpense["category"] = "others";
+  const category: ParsedExpense["category"] = "OTHERS";
 
   return {
-    id: `${amount}_${notification.date}`,
+    id: uuid.v4() as string,
     amount,
     category,
     date: notification.date,

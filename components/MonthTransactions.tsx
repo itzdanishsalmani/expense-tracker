@@ -1,4 +1,4 @@
-import { getTransactionsByDateRange, initDB, updateTransactionCategory } from "@/utils/db";
+import { addToSyncQueue, getTransactionsByDateRange, initDB, updateTransactionCategory } from "@/utils/db";
 import { ParsedExpense } from "@/utils/smsParser";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Fontisto from "@expo/vector-icons/Fontisto";
@@ -8,19 +8,17 @@ import { compareAsc, compareDesc, endOfMonth, format, startOfMonth } from "date-
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { colors, typography } from "@/utils/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CATEGORY_IDS as CATEGORIES, formatCategory } from "@/constants/categories";
 
 type MonthTransactionsParams = {
   monthKey: string;
   label: string;
 };
 
-const CATEGORIES: ParsedExpense["category"][] = ["food", "travelling", "shopping", "others"];
 type CategoryFilter = "all" | ParsedExpense["category"];
 type SortDirection = "desc" | "asc";
-
-const formatCategory = (category: CategoryFilter) => (
-  category === "all" ? "All" : category.charAt(0).toUpperCase() + category.slice(1)
-);
 
 const formatDateKey = (timestamp: number) => {
   // Format as YYYY-MM-DD
@@ -33,11 +31,11 @@ const formatShortDate = (timestamp: number) => (
 
 const getCategoryIcon = (category: ParsedExpense["category"]) => {
   switch (category) {
-    case "food":
+    case "FOOD":
       return { name: "shopping-basket", family: Fontisto, color: "#F59E0B" };
-    case "travelling":
+    case "TRAVEL":
       return { name: "bus", family: Fontisto, color: "#2563EB" };
-    case "shopping":
+    case "SHOPPING":
       return { name: "shopping-bag", family: Fontisto, color: "#EC4899" };
     default:
       return { name: "wallet", family: Fontisto, color: "#64748B" };
@@ -47,6 +45,7 @@ const getCategoryIcon = (category: ParsedExpense["category"]) => {
 export default function MonthTransactions() {
   const navigation = useNavigation();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
   const { monthKey, label } = route.params as MonthTransactionsParams;
   const [transactions, setTransactions] = useState<ParsedExpense[]>([]);
   const [total, setTotal] = useState(0);
@@ -149,71 +148,96 @@ export default function MonthTransactions() {
         item.id === id ? { ...item, category } : item
       )
     );
+
+    console.log('Task added in Queue: ', { id, category });
+    await addToSyncQueue("UPDATE", JSON.stringify({ id, category }));
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ padding: 20, paddingTop: 28 }}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: colors.surface,
-            borderWidth: 1,
-            borderColor: colors.border,
-            marginBottom: 18,
-          }}
-        >
-          <Ionicons name="chevron-back" size={20} color={colors.text} />
-        </Pressable>
 
-        <View style={{ backgroundColor: colors.brand, padding: 18, borderRadius: 16, marginBottom: 16 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: insets.top + 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 }}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: colors.surface,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+            >
+            <Ionicons name="chevron-back" size={18} color={colors.text} />
+          </Pressable>
+          <Text style={{ ...typography.section, fontSize: 16, color: colors.text }}>Monthly overview</Text>
+        </View>
+
+        <LinearGradient
+            colors={['#7C3AED', '#7C3AED', '#A78BFA']}
+            start={{ x: 1, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={{ padding: 16, borderRadius: 14, marginBottom: 16, overflow: 'hidden' }}
+            >
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ ...typography.label, color: "rgba(255,255,255,0.85)", marginBottom: 4 }}>Monthly overview</Text>
-              <Text style={{ ...typography.title, color: "white", marginBottom: 6 }}>{label}</Text>
-              <Text style={{ ...typography.body, color: "rgba(255,255,255,0.85)" }}>
+              <Text style={{ ...typography.title, color: "white", marginBottom: 4, fontSize: 20 }}>{label}</Text>
+              <Text style={{ ...typography.body, color: "rgba(255,255,255,0.85)", fontSize: 12 }}>
                 {filteredTransactions.length} of {transactions.length} transactions shown
               </Text>
             </View>
             <View style={{
-              width: 52,
-              height: 52,
-              borderRadius: 26,
+              width: 44,
+              height: 44,
+              borderRadius: 22,
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: "rgba(255,255,255,0.15)",
             }}>
-              <Fontisto name="wallet" size={24} color="#fff" />
+              <Fontisto name="wallet" size={20} color="#fff" />
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
-        <View style={{ backgroundColor: colors.surface, padding: 18, borderRadius: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 18 }}>
-          <Text style={{ ...typography.label, color: colors.textMuted, marginBottom: 8 }}>Month Total</Text>
-          <Text style={{ ...typography.title, color: colors.text, marginBottom: 14 }}>Rs. {total.toFixed(2)}</Text>
-          <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 14 }} />
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={{ flex: 1, backgroundColor: colors.surfaceMuted, padding: 14, borderRadius: 14 }}>
-              <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4 }}>Lowest spend</Text>
-              <Text style={{ ...typography.section, color: colors.text, marginBottom: 4 }}>
-                Rs. {lowestTransaction?.amount.toFixed(2)}
+        <ScrollView 
+          style={{ flex: 1 }} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+        <View style={{ backgroundColor: colors.surface, padding: 16, borderRadius: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, marginBottom: 16 }}>
+          <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4, fontSize: 11 }}>Month Total</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <Text style={{ ...typography.title, color: colors.text, fontSize: 20 }}>Rs. {total.toFixed(2)}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(34, 197, 94, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 }}>
+                  <Ionicons name="arrow-down" size={10} color="#22c55e" />
+                  <Text style={{ color: '#22c55e', fontSize: 10, fontWeight: '600', marginLeft: 2 }}>12%</Text>
+              </View>
+              <Text style={{ fontSize: 10, color: colors.textMuted }}>vs August</Text>
+          </View>
+          <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 12 }} />
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1, backgroundColor: 'rgba(124, 58, 237, 0.05)', padding: 12, borderRadius: 12 }}>
+              <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4, fontSize: 11 }}>Lowest spend</Text>
+              <Text style={{ ...typography.section, color: colors.text, marginBottom: 2, fontSize: 16 }}>
+                Rs. {lowestTransaction?.amount.toFixed(2) || '0.00'}
               </Text>
-              <Text numberOfLines={1} style={{ ...typography.caption, color: colors.textMuted }}>
-                {lowestTransaction?.merchant !== "Unknown" ? lowestTransaction?.merchant : lowestTransaction?.category}
+              <Text numberOfLines={1} style={{ fontSize: 11, color: colors.textMuted }}>
+                {lowestTransaction?.merchant !== "Unknown" ? lowestTransaction?.merchant : (lowestTransaction?.category ? formatCategory(lowestTransaction.category) : 'No data')}
               </Text>
             </View>
-            <View style={{ flex: 1, backgroundColor: colors.surfaceMuted, padding: 14, borderRadius: 14 }}>
-              <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4 }}>Highest paid</Text>
-              <Text style={{ ...typography.section, color: colors.text, marginBottom: 4 }}>
-                Rs. {highestTransaction?.amount.toFixed(2)}
+            <View style={{ flex: 1, backgroundColor: 'rgba(124, 58, 237, 0.05)', padding: 12, borderRadius: 12 }}>
+              <Text style={{ ...typography.caption, color: colors.textMuted, marginBottom: 4, fontSize: 11 }}>Highest spend</Text>
+              <Text style={{ ...typography.section, color: colors.text, marginBottom: 2, fontSize: 16 }}>
+                Rs. {highestTransaction?.amount.toFixed(2) || '0.00'}
               </Text>
-              <Text numberOfLines={1} style={{ ...typography.caption, color: colors.textMuted }}>
-                {highestTransaction?.merchant !== "Unknown" ? highestTransaction?.merchant : highestTransaction?.category}
+              <Text numberOfLines={1} style={{ fontSize: 11, color: colors.textMuted }}>
+                {highestTransaction?.merchant !== "Unknown" ? highestTransaction?.merchant : (highestTransaction?.category ? formatCategory(highestTransaction.category) : 'No data')}
               </Text>
             </View>
           </View>
@@ -238,7 +262,7 @@ export default function MonthTransactions() {
                     alignItems: "center",
                     gap: 6,
                   }}
-                >
+                  >
                   <Ionicons name={sortDirection === "desc" ? "arrow-down" : "arrow-up"} size={14} color="white" />
                   <Text style={{ ...typography.button, color: "white" }}>
                     Date {sortDirection === "desc" ? "Desc" : "Asc"}
@@ -252,17 +276,17 @@ export default function MonthTransactions() {
                   const isSelected = selectedCategory === category;
                   return (
                     <Pressable
-                      key={category}
-                      onPress={() => setSelectedCategory(category)}
-                      style={{
-                        paddingVertical: 8,
-                        paddingHorizontal: 12,
-                        borderRadius: 18,
-                        backgroundColor: isSelected ? colors.text : colors.surfaceMuted,
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
+                    key={category}
+                    onPress={() => setSelectedCategory(category)}
+                    style={{
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 18,
+                      backgroundColor: isSelected ? colors.text : colors.surfaceMuted,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
                     >
                       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isSelected ? "white" : colors.brand }} />
                       <Text style={{ ...typography.caption, color: isSelected ? "white" : colors.text }}>
@@ -287,7 +311,7 @@ export default function MonthTransactions() {
                     alignItems: "center",
                     gap: 6,
                   }}
-                >
+                  >
                   <Ionicons name="calendar-outline" size={14} color={selectedDate === "all" ? "white" : colors.text} />
                   <Text style={{ ...typography.caption, color: selectedDate === "all" ? "white" : colors.text }}>
                     All dates
@@ -304,7 +328,7 @@ export default function MonthTransactions() {
                     alignItems: "center",
                     gap: 6,
                   }}
-                >
+                  >
                   <Ionicons name="funnel-outline" size={14} color={selectedDate !== "all" ? "white" : colors.text} />
                   <Text style={{ ...typography.caption, color: selectedDate !== "all" ? "white" : colors.text }}>
                     {selectedDate !== "all" ? format(new Date(selectedDate), "dd-MMM-yyyy") : "Pick a date"}
@@ -313,16 +337,16 @@ export default function MonthTransactions() {
               </View>
               {showDatePicker && (
                 <DateTimePicker
-                  value={selectedDate !== "all" ? new Date(selectedDate) : new Date()}
-                  mode="date"
-                  display="default"
-                  onChange={(event, date) => {
-                    setShowDatePicker(false);
-                    if (event.type === "set" && date) {
-                      setSelectedDate(formatDateKey(date.getTime()));
-                    }
-                  }}
-                  maximumDate={new Date()}
+                value={selectedDate !== "all" ? new Date(selectedDate) : new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  setShowDatePicker(false);
+                  if (event.type === "set" && date) {
+                    setSelectedDate(formatDateKey(date.getTime()));
+                  }
+                }}
+                maximumDate={new Date()}
                 />
               )}
             </View>
@@ -351,7 +375,7 @@ export default function MonthTransactions() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ ...typography.label, color: colors.text, marginBottom: 4 }}>
-                      {item.merchant !== "Unknown" ? item.merchant : item.category.toUpperCase()}
+                      {item.merchant !== "Unknown" ? item.merchant : formatCategory(item.category)}
                     </Text>
                     <Text style={{ ...typography.caption, color: colors.textMuted }}>
                       {format(new Date(item.date), "dd-MMM HH:mm")}
@@ -364,7 +388,7 @@ export default function MonthTransactions() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.brand }} />
                   <Text style={{ ...typography.caption, color: colors.textMuted }}>
-                    {item.category}
+                    {formatCategory(item.category)}
                   </Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -379,17 +403,17 @@ export default function MonthTransactions() {
                   const isSelected = item.category === category;
                   return (
                     <Pressable
-                      key={category}
-                      onPress={() => handleCategoryChange(item.id, category)}
-                      style={{
-                        paddingVertical: 8,
-                        paddingHorizontal: 12,
-                        borderRadius: 18,
-                        backgroundColor: isSelected ? colors.brand : colors.surfaceMuted,
-                      }}
+                    key={category}
+                    onPress={() => handleCategoryChange(item.id, category)}
+                    style={{
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 18,
+                      backgroundColor: isSelected ? colors.brand : colors.surfaceMuted,
+                    }}
                     >
                       <Text style={{ ...typography.caption, color: isSelected ? "white" : colors.text }}>
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                        {formatCategory(category)}
                       </Text>
                     </Pressable>
                   );
@@ -398,7 +422,8 @@ export default function MonthTransactions() {
             </View>
           ))
         )}
-      </View>
     </ScrollView>
+      </View>
+        </View>
   );
 }

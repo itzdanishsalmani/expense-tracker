@@ -1,14 +1,14 @@
 export const colors = {
-  brand: "#2563EB",
-  brandDark: "#1D4ED8",
-  brandSoft: "#DBEAFE",
-  background: "#F8FAFC",
+  brand: "#7C3AED",
+  brandDark: "#5B21B6",
+  brandSoft: "#A78BFA",
+  background: "#FFFFFF",
   surface: "#FFFFFF",
-  surfaceMuted: "#F1F5F9",
+  surfaceMuted: "#E9D8FD",
   text: "#0F172A",
   textMuted: "#64748B",
   textSoft: "#94A3B8",
-  border: "#E2E8F0",
+  border: "#D8B4FE",
   success: "#16A34A",
   warning: "#F59E0B",
   danger: "#EF4444",
@@ -16,6 +16,12 @@ export const colors = {
 } as const;
 
 export const typography = {
+  fontFamily: {
+    regular: "Inter-Regular",
+    medium: "Inter-Medium",
+    semibold: "Inter-SemiBold",
+    bold: "Inter-Bold",
+  },
   weight: {
     regular: "400" as const,
     medium: "500" as const,
@@ -37,36 +43,43 @@ export const typography = {
     relaxed: 1.5,
   },
   title: {
+    fontFamily: "Inter-Bold",
     fontSize: 20,
     fontWeight: "700" as const,
-    lineHeight: 32,
+    lineHeight: 28,
   },
   heading: {
-    fontSize: 24,
+    fontFamily: "Inter-Bold",
+    fontSize: 20,
     fontWeight: "700" as const,
     lineHeight: 28,
   },
   section: {
-    fontSize: 20,
+    fontFamily: "Inter-SemiBold",
+    fontSize: 18,
     fontWeight: "600" as const,
     lineHeight: 24,
   },
   body: {
+    fontFamily: "Inter-Regular",
     fontSize: 14,
     fontWeight: "400" as const,
     lineHeight: 22,
   },
   label: {
+    fontFamily: "Inter-SemiBold",
     fontSize: 14,
     fontWeight: "600" as const,
     lineHeight: 18,
   },
   caption: {
+    fontFamily: "Inter-Regular",
     fontSize: 12,
     fontWeight: "400" as const,
     lineHeight: 16,
   },
   button: {
+    fontFamily: "Inter-Bold",
     fontSize: 14,
     fontWeight: "700" as const,
     lineHeight: 18,

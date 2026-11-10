@@ -2,13 +2,32 @@
 import AppNavigator from "@/navigation/AppNavigator";
 import * as Notifications from 'expo-notifications';
 import React, { useEffect } from "react";
-import { Alert, DeviceEventEmitter, Linking, StatusBar, Text, View } from "react-native";
+import { Alert, DeviceEventEmitter, Linking, StatusBar, Text, TextInput, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AuthProvider } from "@/context/authContext";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
+
+// Configure default font family for React Native Text and TextInput
+if ((Text as any).defaultProps == null) {
+  (Text as any).defaultProps = {};
+}
+(Text as any).defaultProps.style = { fontFamily: "Inter-Regular" };
+
+if ((TextInput as any).defaultProps == null) {
+  (TextInput as any).defaultProps = {};
+}
+(TextInput as any).defaultProps.style = { fontFamily: "Inter-Regular" };
 import { getTransactionsByDateRange, insertTransactions } from "@/utils/db";
 import { parseNotificationToExpense } from "@/utils/notificationParser";
 import { useNetwork } from "@/utils/network";
+import { initDB, seedDummyData } from './utils/db';
 
 const APP_VERSION = process.env.EXPO_PUBLIC_APP_VERSION;
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
@@ -93,9 +112,13 @@ DeviceEventEmitter.addListener("PaymentNotification", async (event: NativeNotifi
 });
 
 export default function App() {
-    const { isConnected, isInternetReachable } = useNetwork();
-
-
+  const [fontsLoaded] = useFonts({
+    Inter: Inter_400Regular,
+    "Inter-Regular": Inter_400Regular,
+    "Inter-Medium": Inter_500Medium,
+    "Inter-SemiBold": Inter_600SemiBold,
+    "Inter-Bold": Inter_700Bold,
+  });
 
   async function checkVersion() {
     try {
@@ -149,17 +172,29 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const setupDatabase = async () => {
+        await initDB();
+        // await seedDummyData();
+    };
+    setupDatabase();
+  }, []);
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
           <SafeAreaView
-            edges={["top", "left", "right", "bottom"]}
+            edges={[]}
             style={{ flex: 1 }}
           >
-            <StatusBar />
+            <StatusBar  />
             <AppNavigator />
-            <View>
+            {/* <View>
                     {(!isConnected || !isInternetReachable) && (
         
           <Text>
@@ -167,7 +202,7 @@ export default function App() {
           </Text>
               )}
 
-            </View>
+            </View> */}
           </SafeAreaView>
         </AuthProvider>
       </SafeAreaProvider>
